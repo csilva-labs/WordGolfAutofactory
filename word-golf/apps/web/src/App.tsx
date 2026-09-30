@@ -9,11 +9,13 @@ import {
   makePracticePuzzle,
   neighbors,
   normalizePracticeDifficulty,
+  recordDailyCompletion,
   relativeToPar,
   scoreLabel,
   utcDateString,
   validateMove,
   WORD_LENGTH,
+  type DailyStats,
   type MoveRejection,
   type PracticeDifficulty,
   type Puzzle,
@@ -22,6 +24,7 @@ import {
 } from "@word-golf/engine";
 import { FLAG_KEYS, METRIC_EVENTS, useFlag, useTrack } from "@word-golf/ld";
 import { graph, practicePools, startPool, targetPool } from "./words.js";
+import { loadStats, saveStats } from "./stats.js";
 
 const PRACTICE_DIFFICULTY_LEVELS = PRACTICE_DIFFICULTIES;
 
@@ -56,6 +59,7 @@ export function App() {
   // "medium" avoids crashing puzzle generation on the control path.
   const wordPoolDifficulty = normalizePracticeDifficulty(wordPoolDifficultyRaw);
   const showPoweredByFooter = useFlag(FLAG_KEYS.showPoweredByFooter);
+  const showStats = useFlag(FLAG_KEYS.showStats);
 
   // Business metric: fire once when the footer is rendered (treatment path).
   // Wrapped in try/catch so a tracking failure can never break the page.
@@ -99,6 +103,11 @@ export function App() {
   const [input, setInput] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
+  // Daily streak/completion stats, persisted to localStorage. Only ever
+  // updated for daily (not practice) puzzles.
+  const [stats, setStats] = useState<DailyStats>(() => loadStats());
+  const [statsOpen, setStatsOpen] = useState(false);
+
   const current = path[path.length - 1];
   const moves = path.length - 1;
   const won = current === puzzle.target;
@@ -121,7 +130,22 @@ export function App() {
     if (puzzle.par !== null && moves <= puzzle.par) {
       track(METRIC_EVENTS.madePar, { data: { moves, par: puzzle.par } });
     }
-  }, [won, moves, puzzle.par, track]);
+    // Streaks/stats only track the shared daily puzzle, not one-off practice
+    // puzzles. Persist regardless of the show-stats flag so the panel has
+    // accurate history the moment it's turned on.
+    if (isDaily) {
+      const result = recordDailyCompletion(stats, today, moves);
+      setStats(result.stats);
+      saveStats(result.stats);
+      if (result.isReturn) {
+        try {
+          track(METRIC_EVENTS.dailyReturned);
+        } catch {
+          // intentionally swallowed — telemetry must not affect gameplay
+        }
+      }
+    }
+  }, [won, moves, puzzle.par, track, isDaily, stats, today]);
 
   // Error: count an abandon if the player leaves mid-puzzle after moving.
   const wonRef = useRef(won);
@@ -193,6 +217,22 @@ export function App() {
     startTimeRef.current = Date.now();
     lastMoveRef.current = Date.now();
     completedRef.current = false;
+  }
+
+  function toggleStats() {
+    setStatsOpen((open) => {
+      const next = !open;
+      if (next) {
+        // Business metric: fire each time the panel is opened (treatment path only).
+        // Wrapped in try/catch so a tracking failure can never break the button.
+        try {
+          track(METRIC_EVENTS.statsPanelViewed);
+        } catch {
+          // intentionally swallowed — telemetry must not affect gameplay
+        }
+      }
+      return next;
+    });
   }
 
   // Swap in a fresh puzzle and reset all per-puzzle state (board + metric guards).
@@ -307,13 +347,27 @@ export function App() {
   return (
     <main className="app">
       <header className="header">
-        <h1>Word Golf</h1>
+        <div className="header-row">
+          <h1>Word Golf</h1>
+          {showStats && (
+            <button
+              type="button"
+              className="stats-toggle"
+              onClick={toggleStats}
+              aria-expanded={statsOpen}
+            >
+              Stats
+            </button>
+          )}
+        </div>
         <p className="tagline">
           Turn the starting word into the target word, one letter at a time.
           Every step must be a real word — anything else reverts to the last
           good word.
         </p>
       </header>
+
+      {showStats && statsOpen && <StatsPanel stats={stats} />}
 
       <section className="goal">
         <WordChip label="Start" word={puzzle.start} />
@@ -561,5 +615,38 @@ function Stat({ label, value }: { label: string; value: string }) {
       <span className="stat-value">{value}</span>
       <span className="stat-label">{label}</span>
     </div>
+  );
+}
+
+function StatsPanel({ stats }: { stats: DailyStats }) {
+  const distribution = Object.entries(stats.moveCounts)
+    .map(([moves, count]) => ({ moves: Number(moves), count }))
+    .sort((a, b) => a.moves - b.moves);
+  const maxCount = distribution.reduce((max, row) => Math.max(max, row.count), 0);
+
+  return (
+    <section className="stats-panel" aria-label="Daily stats">
+      <div className="stats-grid">
+        <Stat label="Current Streak" value={String(stats.currentStreak)} />
+        <Stat label="Max Streak" value={String(stats.maxStreak)} />
+        <Stat label="Completed" value={String(stats.totalCompleted)} />
+      </div>
+      {distribution.length > 0 && (
+        <div className="stats-distribution" aria-label="Moves distribution">
+          {distribution.map(({ moves, count }) => (
+            <div className="distribution-row" key={moves}>
+              <span className="distribution-label">{moves}</span>
+              <div className="distribution-bar-track">
+                <div
+                  className="distribution-bar"
+                  style={{ width: `${maxCount > 0 ? (count / maxCount) * 100 : 0}%` }}
+                />
+              </div>
+              <span className="distribution-count">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

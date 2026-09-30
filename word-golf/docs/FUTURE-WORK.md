@@ -27,7 +27,8 @@ land as a clean, single-hypothesis PR.
 
 ## Replayability / data (Phase 1 per plan)
 
-- Streaks, stats, shareable spoiler-free result text.
+- ~~Streaks, stats~~ — shipped behind `show-stats` (bool); watches `daily_returned`.
+- Shareable spoiler-free result text — shipped behind `enable-share-result-button`.
 - Local metric event stubs: `puzzle_completed`, `time_to_solve_ms`, `invalid_move`,
   `puzzle_abandoned`, `made_par`, `result_shared`, `daily_returned`.
 
