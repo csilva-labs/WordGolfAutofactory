@@ -33,3 +33,5 @@ land as a clean, single-hypothesis PR.
   `puzzle_abandoned`, `made_par`, `result_shared`, `daily_returned`.
 
 These are tracked in detail in the top-level `plan.md` (Phases 1-5).
+
+<!-- auto-factory verification: confirming secrets/config are wired correctly. -->
