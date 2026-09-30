@@ -89,6 +89,15 @@
       "defaultVariation": 0,
       "hypothesis": "Session replay unlocks LD flag Monitoring and session-level debugging; off by default for input privacy.",
       "watchedMetric": null
+    },
+    {
+      "key": "show-stats",
+      "name": "Show Stats",
+      "kind": "boolean",
+      "variations": [false, true],
+      "defaultVariation": 0,
+      "hypothesis": "Surfacing streaks and completion stats increases daily return rate.",
+      "watchedMetric": "daily_returned"
     }
   ]
 }

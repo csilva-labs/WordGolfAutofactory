@@ -125,6 +125,15 @@
       "unit": "count",
       "successCriteria": "LowerThanBaseline",
       "description": "Clipboard write failed when sharing a daily result."
+    },
+    {
+      "key": "show-stats-viewed",
+      "name": "Stats Panel Viewed",
+      "category": "business",
+      "kind": "custom",
+      "unit": "count",
+      "successCriteria": "HigherThanBaseline",
+      "description": "The Stats panel (streaks/completions) was opened (treatment path only)."
     }
   ]
 }

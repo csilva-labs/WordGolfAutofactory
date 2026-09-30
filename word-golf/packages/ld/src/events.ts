@@ -33,6 +33,9 @@ export const METRIC_EVENTS = {
    *  rendered (treatment path only). Occurrence metric — higher is better
    *  (business). */
   poweredByFooterViewed: "show-powered-by-footer-viewed",
+  /** Fired each time the player opens the Stats panel (treatment path only).
+   *  Occurrence metric — higher is better (business). */
+  statsPanelViewed: "show-stats-viewed",
 } as const;
 
 export type MetricEvent = (typeof METRIC_EVENTS)[keyof typeof METRIC_EVENTS];

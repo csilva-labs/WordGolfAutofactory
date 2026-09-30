@@ -15,6 +15,7 @@ export const FLAG_KEYS = {
   enableDifficultyPickerUx: "enable-difficulty-picker-ux",
   showPoweredByFooter: "show-powered-by-footer",
   enableSessionReplay: "enable-session-replay",
+  showStats: "show-stats",
 } as const;
 
 export type ParAlgorithm = "shortest" | "no-reuse" | "heuristic";
@@ -31,6 +32,7 @@ export interface Flags {
   "enable-difficulty-picker-ux": boolean;
   "show-powered-by-footer": boolean;
   "enable-session-replay": boolean;
+  "show-stats": boolean;
 }
 
 /**
@@ -56,4 +58,8 @@ export const FLAG_DEFAULTS: Flags = {
   // Control path: false → session replay off (privacy default for word-game input).
   // Treatment path: true  → LDRecord.start() records anonymized replays in LD.
   "enable-session-replay": false,
+  // Control path: false → no Stats button/panel rendered (existing behavior).
+  // Treatment path: true  → a Stats button reveals streak/completion stats,
+  //                          hypothesized to raise the daily_returned metric.
+  "show-stats": false,
 };

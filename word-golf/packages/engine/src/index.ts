@@ -28,3 +28,9 @@ export {
   type DailyOptions,
 } from "./daily.js";
 export { seededRng, mulberry32, hashSeed, pick } from "./rng.js";
+export {
+  createInitialStats,
+  recordDailyCompletion,
+  type DailyStats,
+  type RecordDailyCompletionResult,
+} from "./stats.js";
